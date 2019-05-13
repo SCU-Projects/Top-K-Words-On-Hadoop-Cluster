@@ -10,7 +10,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class WordCount {
+public class WordCountStage1 {
 
    public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
 
@@ -21,8 +21,11 @@ public class WordCount {
            StringTokenizer itr = new StringTokenizer(value.toString());
            while (itr.hasMoreTokens()) {
                String token = itr.nextToken();
+              
+               //ignore the words having length < 3
                if (token.length() < 3)
                    continue;
+              
                word.set(token);
                context.write(word, one);
            }
@@ -49,7 +52,6 @@ public class WordCount {
        job.setJarByClass(WordCount.class);
        job.setMapperClass(TokenizerMapper.class);
        job.setCombinerClass(IntSumReducer.class);
-       job.setNumReduceTasks(300);
        job.setReducerClass(IntSumReducer.class);
        job.setOutputKeyClass(Text.class);
        job.setOutputValueClass(IntWritable.class);
