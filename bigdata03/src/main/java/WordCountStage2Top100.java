@@ -11,24 +11,28 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class WordCount {
+public class WordCountStage2Top100 {
 
     public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
 
-        private static IntWritable one = new IntWritable(1);
+        private static IntWritable wordCount;
         private Text word = new Text();
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
+           
             while (itr.hasMoreTokens()) {
                 String token = itr.nextToken();
+                
+                //ignore the words having length < 3
                 if (token.length() < 3)
                     continue;
+                
                 word.set(token);
 
                 String count = itr.nextToken();
-                one = new IntWritable(Integer.valueOf(count));
-                context.write(word, one);
+                wordCount = new IntWritable(Integer.valueOf(count));
+                context.write(word, wordCount);
             }
         }
     }
@@ -42,26 +46,34 @@ public class WordCount {
         public void reduce(Text key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
             int sum = 0;
+            
             for (IntWritable val : values)
                 sum += val.get();
+            
             WordCountReducer wc = new WordCountReducer();
             wc.setWord(key.toString());
             wc.setCount(sum);
             top100WordsQ.add(wc);
+            
+            //remove the word having less count frequency 
             if (top100WordsQ.size() > 100)
                 top100WordsQ.poll();
 
         }
 
+        //to process the priority-queue and collect the results
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
             super.cleanup(context);
             IntWritable count = new IntWritable();
             List<WordCountReducer> result = new ArrayList<>();
+            
             while (top100WordsQ.size() > 0) {
                 result.add(0, top100WordsQ.poll());
             }
             int i = 0;
+       
+            //collect top-100 frequent words
             while (result.size() > i) {
                 WordCountReducer wc = result.get(i);
                 org.apache.hadoop.io.Text text = new Text(wc.getWord());
@@ -105,6 +117,7 @@ public class WordCount {
         job.setMapperClass(TokenizerMapper.class);
         job.setCombinerClass(IntSumReducer.class);
         job.setReducerClass(IntSumReducer.class);
+        //to reduce to single reducer output at the end
         job.setNumReduceTasks(1);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(IntWritable.class);
