@@ -49,7 +49,7 @@ public class WordCountStage1 {
    public static void main(String[] args) throws Exception {
        Configuration conf = new Configuration();
        Job job = Job.getInstance(conf, "word count");
-       job.setJarByClass(WordCount.class);
+       job.setJarByClass(WordCountStage1.class);
        job.setMapperClass(TokenizerMapper.class);
        job.setCombinerClass(IntSumReducer.class);
        job.setReducerClass(IntSumReducer.class);
