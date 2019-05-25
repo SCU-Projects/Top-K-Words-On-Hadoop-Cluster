@@ -113,7 +113,7 @@ public class WordCountStage2Top100 {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "word count");
-        job.setJarByClass(WordCount.class);
+        job.setJarByClass(WordCountStage2Top100.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setCombinerClass(IntSumReducer.class);
         job.setReducerClass(IntSumReducer.class);
